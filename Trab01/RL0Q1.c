@@ -79,23 +79,23 @@ char* pontosParaString(const Ponto pontos[], int quantidade) {
 
     str[0] = '\0'; // Inicializa a string
     for (int i = 0; i < quantidade; i++) {
-        char *temp = (char*)malloc((strlen(pontos[i].strPonto) + 1) * sizeof(char));
-
-        strcpy(temp, pontos[i].strPonto);
-        strcat(str, temp);
-        free(temp); // Libera memória do buffer temporário
+        // Adiciona o ponto à string
+        char ponto[50];
+        sprintf(ponto, "(%d,%d)", pontos[i].x, pontos[i].y);
+        strcat(str, ponto);
     }
     return str;
 }
-
 
 int main() {
     FILE *arquivo_entrada = fopen("L0Q1.in", "r"); // Abre L0Q1.in para leitura
     FILE *arquivo_saida = fopen("L0Q1.out", "w"); // Abre L0Q1.out para escrita
 
     if (arquivo_entrada == NULL || arquivo_saida == NULL) {
-        printf("Erro ao abrir arquivos");
+        printf("Erro ao abrir arquivos de entrada ou saída\n");
         return EXIT_FAILURE;
+    } else {
+        printf("Arquivos abertos com sucesso\n");
     }
 
     char linha[MAX_LINHA];
@@ -104,39 +104,56 @@ int main() {
     const char delimCoordX[] = ","; // delimitador para X
     const char delimCoordY[] = ")"; // delimitador para Y
     char *parte;
-    char *endptr; // auxiliar para atof
+    char *endptr;
     int contadorPontos = 0;
     char *strPontos;
 
     while (fgets(linha, MAX_LINHA, arquivo_entrada) != NULL) {
+        printf("Linha lida: %s\n", linha);
+
         parte = strtok(linha, delimPonto);
         contadorPontos = 0;
 
         while (parte != NULL && contadorPontos < MAX_PONTOS) {
-            pontos[contadorPontos].strPonto = strdup(parte); // alocação dinâmica e cópia da string
+            printf("Processando parte: %s\n", parte);
+
+            pontos[contadorPontos].strPonto = strdup(parte);
 
             char *x_str = strtok(NULL, delimCoordX);
             char *y_str = strtok(NULL, delimCoordY);
 
-            pontos[contadorPontos].x = (int)strtol(x_str, &endptr, 10);
-            pontos[contadorPontos].y = (int)strtol(y_str, &endptr, 10);
+            if (x_str && y_str) {
+                pontos[contadorPontos].x = (int)strtol(x_str, &endptr, 10);
+                pontos[contadorPontos].y = (int)strtol(y_str, &endptr, 10);
+                pontos[contadorPontos].distanciaOrigem = sqrt(pow(pontos[contadorPontos].x, 2) + pow(pontos[contadorPontos].y, 2));
+                printf("Ponto extraído: x=%d, y=%d\n", pontos[contadorPontos].x, pontos[contadorPontos].y);
+                contadorPontos++;
+            } else {
+                printf("Erro ao processar coordenadas de %s\n", parte);
+            }
 
-            pontos[contadorPontos].distanciaOrigem = sqrt(pow(pontos[contadorPontos].x, 2) + pow(pontos[contadorPontos].y, 2));
-            contadorPontos++;
             parte = strtok(NULL, delimPonto);
         }
 
-        double distanciaTotal = (contadorPontos >= 2) ? calcularDistanciaTotal(pontos, contadorPontos) : 0.0;
-        double atalho = (contadorPontos >= 2) ? calcularDistancia(pontos[0], pontos[contadorPontos - 1]) : 0.0;
+        if (contadorPontos == 0) {
+            printf("Nenhum ponto encontrado na linha\n");
+            continue;
+        }
 
+        // Calcular as distâncias
+        double distanciaTotal = calcularDistanciaTotal(pontos, contadorPontos);
+        double atalho = calcularDistancia(pontos[0], pontos[contadorPontos - 1]); // Atalho entre o primeiro e último ponto
+
+        // Ordenar os pontos por distância
         ordenarPontos(pontos, 0, contadorPontos - 1);
         strPontos = pontosParaString(pontos, contadorPontos);
 
-        char texto[MAX_LINHA]; // aumenta o tamanho
+        // Criar texto e salvar no arquivo
+        char texto[MAX_LINHA];
         sprintf(texto, "pontos %s distancia %.2lf atalho %.2lf\n", strPontos, distanciaTotal, atalho);
         fputs(texto, arquivo_saida);
+        printf("Escrevendo no arquivo de saída: %s\n", texto);
 
-        // Libera memória alocada para as strings que armazenam strPonto
         for (int i = 0; i < contadorPontos; i++) {
             free(pontos[i].strPonto);
         }
@@ -145,5 +162,6 @@ int main() {
 
     fclose(arquivo_entrada);
     fclose(arquivo_saida);
+    printf("Processamento concluído\n");
     return EXIT_SUCCESS;
 }
