@@ -3,165 +3,119 @@
 #include <string.h>
 #include <math.h>
 
-#define MAX_LINHA 500
-#define MAX_PONTOS 100
+#define MAX_LINHA 1000
+#define MAX_PONTOS 1000
 
-// struct para armazenar pontos
+// Struct para armazenar coordenadas
 typedef struct Ponto {
-    int x;
-    int y;
-    char *strPonto; // Ponteiro para string, alocação dinâmica
-    double distanciaOrigem;
+    float x;
+    float y;
+    char point[50];
+    float distanciaOrigem;
 } Ponto;
 
-// Função para calcular a distância euclidiana entre dois pontos
-double calcularDistancia(const Ponto p1, const Ponto p2) {
+// Função para calcular a menor distância euclidiana entre dois pontos
+float calcularDistancia(const Ponto p1, const Ponto p2) {
     return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
 }
 
 // Função para calcular a distância euclidiana total
-double calcularDistanciaTotal(const Ponto pontos[], int quantidade) {
-    double distanciaTotal = 0.0;
+float calcularDistanciaTotal(const Ponto pontos[], int quantidade) {
+    float distanciaTotal = 0.0;
     for (int i = 0; i < quantidade - 1; i++) {
         distanciaTotal += calcularDistancia(pontos[i], pontos[i + 1]);
     }
     return distanciaTotal;
 }
 
-// Função auxiliar merge para o merge sort
-void mergePontos(Ponto pontos[], int inicio, int meio, int fim) {
-    int n1 = meio - inicio + 1;
-    int n2 = fim - meio;
-
-    Ponto *esq = (Ponto *)malloc(n1 * sizeof(Ponto));
-    Ponto *dir = (Ponto *)malloc(n2 * sizeof(Ponto));
-
-    for (int i = 0; i < n1; i++) {
-        esq[i] = pontos[inicio + i];
+// Função para converter o array de pontos em string
+void pontosParaString(Ponto pontos[], int quantidade, char *str, size_t str_size) {
+    str[0] = '\0';
+    for (int i = 0; i < quantidade; i++) {
+        snprintf(str + strlen(str), str_size - strlen(str), "%s ", pontos[i].point);
     }
-    for (int i = 0; i < n2; i++) {
-        dir[i] = pontos[meio + 1 + i];
+    if (strlen(str) > 0) {
+        str[strlen(str) - 1] = '\0'; // Remove o espaço extra no final
     }
+}
 
-    int i = 0, j = 0, k = inicio;
-    while (i < n1 && j < n2) {
-        if (esq[i].distanciaOrigem <= dir[j].distanciaOrigem) {
-            pontos[k++] = esq[i++];
-        } else {
-            pontos[k++] = dir[j++];
+// Função para ordenar usando QuickSort
+void swap(Ponto *a, Ponto *b) {
+    Ponto temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+int partition(Ponto arr[], int low, int high) {
+    float pivot = arr[high].distanciaOrigem;
+    int i = (low - 1);
+
+    for (int j = low; j <= high - 1; j++) {
+        if (arr[j].distanciaOrigem < pivot) {
+            i++;
+            swap(&arr[i], &arr[j]);
         }
     }
-
-    while (i < n1) {
-        pontos[k++] = esq[i++];
-    }
-    while (j < n2) {
-        pontos[k++] = dir[j++];
-    }
-
-    free(esq);
-    free(dir);
+    swap(&arr[i + 1], &arr[high]);
+    return (i + 1);
 }
 
-// Função para ordenar, através do merge sort, o array de pontos com relação à distância à origem
-void ordenarPontos(Ponto pontos[], int inicio, int fim) {
-    if (inicio < fim) {
-        int meio = inicio + (fim - inicio) / 2; // Prevenindo overflow
-        ordenarPontos(pontos, inicio, meio);
-        ordenarPontos(pontos, meio + 1, fim);
-        mergePontos(pontos, inicio, meio, fim);
+void quickSort(Ponto arr[], int low, int high) {
+    if (low < high) {
+        int pi = partition(arr, low, high);
+        quickSort(arr, low, pi - 1);
+        quickSort(arr, pi + 1, high);
     }
-}
-
-// Função para converter o array de pontos em string (com alocação dinâmica)
-char* pontosParaString(const Ponto pontos[], int quantidade) {
-    char *str = (char*)malloc(MAX_LINHA * sizeof(char)); // Alocação dinâmica!
-
-    str[0] = '\0'; // Inicializa a string
-    for (int i = 0; i < quantidade; i++) {
-        // Adiciona o ponto à string
-        char ponto[50];
-        sprintf(ponto, "(%d,%d)", pontos[i].x, pontos[i].y);
-        strcat(str, ponto);
-    }
-    return str;
 }
 
 int main() {
-    FILE *arquivo_entrada = fopen("L0Q1.in", "r"); // Abre L0Q1.in para leitura
-    FILE *arquivo_saida = fopen("L0Q1.out", "w"); // Abre L0Q1.out para escrita
+    FILE *arquivo_entrada = fopen("L0Q1.in", "r");
+    FILE *arquivo_saida = fopen("L0Q1.out", "w");
 
     if (arquivo_entrada == NULL || arquivo_saida == NULL) {
-        printf("Erro ao abrir arquivos de entrada ou saída\n");
+        printf("Erro ao abrir os arquivos\n");
         return EXIT_FAILURE;
-    } else {
-        printf("Arquivos abertos com sucesso\n");
     }
 
     char linha[MAX_LINHA];
     Ponto pontos[MAX_PONTOS];
-    const char delimPonto[] = " ";
-    const char delimCoordX[] = ","; // delimitador para X
-    const char delimCoordY[] = ")"; // delimitador para Y
-    char *parte;
-    char *endptr;
-    int contadorPontos = 0;
-    char *strPontos;
+    char stringCoordenadas[MAX_LINHA];
+    int contadorPontos;
 
     while (fgets(linha, MAX_LINHA, arquivo_entrada) != NULL) {
-        printf("Linha lida: %s\n", linha);
-
-        parte = strtok(linha, delimPonto);
+        linha[strcspn(linha, "\n")] = '\0'; // Remove o '\n' do final da linha
         contadorPontos = 0;
+        char *parte = strtok(linha, " ");
 
         while (parte != NULL && contadorPontos < MAX_PONTOS) {
-            printf("Processando parte: %s\n", parte);
-
-            pontos[contadorPontos].strPonto = strdup(parte);
-
-            char *x_str = strtok(NULL, delimCoordX);
-            char *y_str = strtok(NULL, delimCoordY);
-
-            if (x_str && y_str) {
-                pontos[contadorPontos].x = (int)strtol(x_str, &endptr, 10);
-                pontos[contadorPontos].y = (int)strtol(y_str, &endptr, 10);
+            if (parte[0] == '(' && parte[strlen(parte) - 1] == ')') {
+                strcpy(pontos[contadorPontos].point, parte);
+                sscanf(parte, "(%f,%f)", &pontos[contadorPontos].x, &pontos[contadorPontos].y);
                 pontos[contadorPontos].distanciaOrigem = sqrt(pow(pontos[contadorPontos].x, 2) + pow(pontos[contadorPontos].y, 2));
-                printf("Ponto extraído: x=%d, y=%d\n", pontos[contadorPontos].x, pontos[contadorPontos].y);
                 contadorPontos++;
-            } else {
-                printf("Erro ao processar coordenadas de %s\n", parte);
             }
-
-            parte = strtok(NULL, delimPonto);
+            parte = strtok(NULL, " ");
         }
 
-        if (contadorPontos == 0) {
-            printf("Nenhum ponto encontrado na linha\n");
+        if (contadorPontos < 2) {
             continue;
         }
 
-        // Calcular as distâncias
-        double distanciaTotal = calcularDistanciaTotal(pontos, contadorPontos);
-        double atalho = calcularDistancia(pontos[0], pontos[contadorPontos - 1]); // Atalho entre o primeiro e último ponto
+        // Calcular a distância total e o atalho
+        float distanciaTotal = calcularDistanciaTotal(pontos, contadorPontos);
+        float atalho = calcularDistancia(pontos[0], pontos[contadorPontos - 1]);
 
-        // Ordenar os pontos por distância
-        ordenarPontos(pontos, 0, contadorPontos - 1);
-        strPontos = pontosParaString(pontos, contadorPontos);
+        // Ordenar os pontos por distância à origem
+        quickSort(pontos, 0, contadorPontos - 1);
 
-        // Criar texto e salvar no arquivo
-        char texto[MAX_LINHA];
-        sprintf(texto, "pontos %s distancia %.2lf atalho %.2lf\n", strPontos, distanciaTotal, atalho);
-        fputs(texto, arquivo_saida);
-        printf("Escrevendo no arquivo de saída: %s\n", texto);
+        // Converter os pontos em string
+        pontosParaString(pontos, contadorPontos, stringCoordenadas, sizeof(stringCoordenadas));
 
-        for (int i = 0; i < contadorPontos; i++) {
-            free(pontos[i].strPonto);
-        }
-        free(strPontos);
+        // Escrever no arquivo de saída
+        fprintf(arquivo_saida, "pontos %s distancia %.2f atalho %.2f\n", stringCoordenadas, distanciaTotal, atalho);
     }
 
     fclose(arquivo_entrada);
     fclose(arquivo_saida);
-    printf("Processamento concluído\n");
     return EXIT_SUCCESS;
 }
