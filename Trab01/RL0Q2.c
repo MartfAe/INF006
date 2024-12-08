@@ -1,3 +1,5 @@
+//Ana Emília Lobo, matricula 20241160001
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,13 +12,15 @@ typedef struct Ponto {
     float x;
     float y;
     float distanciaOrigem;
+    char strPonto[50];  // Variável para armazenar a string do ponto
 } Ponto;
 
-double calcularDistanciaOrigem(float x, float y) {
+// Função para calcular a distância Euclidiana de um ponto à origem
+float calcularDistanciaOrigem(float x, float y) {
     return sqrt(x * x + y * y);
 }
 
-// Função para ordenar strings em ordem alfabética manualmente
+// Função para ordenar strings em ordem alfabética
 void ordenarStrings(char strings[MAX_ELEMENTOS][MAX_LINHA], int numStrings) {
     for (int i = 0; i < numStrings - 1; i++) {
         for (int j = i + 1; j < numStrings; j++) {
@@ -30,7 +34,7 @@ void ordenarStrings(char strings[MAX_ELEMENTOS][MAX_LINHA], int numStrings) {
     }
 }
 
-// Função para ordenar inteiros em ordem crescente manualmente
+// Função para ordenar inteiros em ordem crescente
 void ordenarInteiros(int inteiros[MAX_ELEMENTOS], int numInteiros) {
     for (int i = 0; i < numInteiros - 1; i++) {
         for (int j = i + 1; j < numInteiros; j++) {
@@ -43,7 +47,7 @@ void ordenarInteiros(int inteiros[MAX_ELEMENTOS], int numInteiros) {
     }
 }
 
-// Função para ordenar floats em ordem crescente manualmente
+// Função para ordenar floats em ordem crescente
 void ordenarFloats(float floats[MAX_ELEMENTOS], int numFloats) {
     for (int i = 0; i < numFloats - 1; i++) {
         for (int j = i + 1; j < numFloats; j++) {
@@ -56,7 +60,7 @@ void ordenarFloats(float floats[MAX_ELEMENTOS], int numFloats) {
     }
 }
 
-// Função para ordenar pontos por distância à origem manualmente
+// Função para ordenar pontos pela distância à origem
 void ordenarPontos(Ponto pontos[MAX_ELEMENTOS], int numPontos) {
     for (int i = 0; i < numPontos - 1; i++) {
         for (int j = i + 1; j < numPontos; j++) {
@@ -73,72 +77,89 @@ int main() {
     FILE *arquivo_entrada = fopen("L0Q2.in", "r");
     FILE *arquivo_saida = fopen("L0Q2.out", "w");
 
-    if (arquivo_entrada == NULL) {
-        perror("Erro ao abrir arquivo de entrada");
-        return EXIT_FAILURE;
-    }
-    if (arquivo_saida == NULL) {
-        perror("Erro ao abrir arquivo de saída");
-        fclose(arquivo_entrada);
+    if (arquivo_entrada == NULL || arquivo_saida == NULL) {
+        perror("Erro ao abrir arquivos");
         return EXIT_FAILURE;
     }
 
     char linha[MAX_LINHA];
-    while (fgets(linha, MAX_LINHA, arquivo_entrada) != NULL) {
+    while (fgets(linha, MAX_LINHA, arquivo_entrada)) {
+        linha[strcspn(linha, "\n")] = 0; // Remove o '\n' do final da linha
+
         char strings[MAX_ELEMENTOS][MAX_LINHA];
-        int inteiros[MAX_ELEMENTOS];
+        int inteiros[MAX_ELEMENTOS], intCount = 0, stringCount = 0, floatCount = 0, coordCount = 0;
         float floats[MAX_ELEMENTOS];
         Ponto pontos[MAX_ELEMENTOS];
-        
-        int numStrings = 0, numInteiros = 0, numFloats = 0, numPontos = 0;
 
         char *token = strtok(linha, " ");
-        while (token != NULL) {
-            // Identifica pontos no formato (x,y)
-            if (sscanf(token, "(%f,%f)", &pontos[numPontos].x, &pontos[numPontos].y) == 2) {
-                pontos[numPontos].distanciaOrigem = calcularDistanciaOrigem(pontos[numPontos].x, pontos[numPontos].y);
-                numPontos++;
+        while (token) {
+            // Identificar pontos no formato (x,y)
+            if (sscanf(token, "(%f,%f)", &pontos[coordCount].x, &pontos[coordCount].y) == 2) {
+                strcpy(pontos[coordCount].strPonto, token);  // Armazena o ponto como string
+                pontos[coordCount].distanciaOrigem = calcularDistanciaOrigem(pontos[coordCount].x, pontos[coordCount].y);
+                coordCount++;
             }
-            // Identifica floats
-            else if (sscanf(token, "%f", &floats[numFloats]) == 1 && strchr(token, '.') != NULL) {
-                numFloats++;
+            // Identificar inteiros (números inteiros)
+            else if (strspn(token, "0123456789-") == strlen(token)) {
+                inteiros[intCount++] = atoi(token);
             }
-            // Identifica inteiros
-            else if (sscanf(token, "%d", &inteiros[numInteiros]) == 1) {
-                numInteiros++;
+            // Identificar floats (números decimais)
+            else if (strspn(token, "0123456789.-") == strlen(token)) {
+                floats[floatCount++] = atof(token);
             }
-            // Identifica strings
+            // Identificar strings
             else {
-                strcpy(strings[numStrings], token);
-                numStrings++;
+                strcpy(strings[stringCount++], token);
             }
             token = strtok(NULL, " ");
         }
 
-        // Ordenação manual de cada categoria
-        ordenarStrings(strings, numStrings);
-        ordenarInteiros(inteiros, numInteiros);
-        ordenarFloats(floats, numFloats);
-        ordenarPontos(pontos, numPontos);
+        // Ordenação das categorias
+        ordenarStrings(strings, stringCount);
+        ordenarInteiros(inteiros, intCount);
+        ordenarFloats(floats, floatCount);
+        ordenarPontos(pontos, coordCount);
 
-        // Escreve os resultados no arquivo de saída
-        fprintf(arquivo_saida, "str:");
-        for (int i = 0; i < numStrings; i++) {
-            fprintf(arquivo_saida, "%s ", strings[i]);
+        // Formatação da saída
+        int isFirst = 1;  // Variável para controlar a primeira impressão
+
+        if (stringCount > 0) {
+            if (!isFirst) fprintf(arquivo_saida, " ");  // Adiciona espaço se não for a primeira categoria
+            fprintf(arquivo_saida, "str:");
+            for (int i = 0; i < stringCount; i++) {
+                fprintf(arquivo_saida, "%s ", strings[i]);
+            }
+            isFirst = 0;
         }
-        fprintf(arquivo_saida, "int:");
-        for (int i = 0; i < numInteiros; i++) {
-            fprintf(arquivo_saida, "%d ", inteiros[i]);
+
+        if (intCount > 0) {
+            if (!isFirst) fprintf(arquivo_saida, " ");  // Adiciona espaço se não for a primeira categoria
+            fprintf(arquivo_saida, "int:");
+            for (int i = 0; i < intCount; i++) {
+                fprintf(arquivo_saida, "%d ", inteiros[i]);
+            }
+            isFirst = 0;
         }
-        fprintf(arquivo_saida, "float:");
-        for (int i = 0; i < numFloats; i++) {
-            fprintf(arquivo_saida, "%.2f ", floats[i]);
+
+        if (floatCount > 0) {
+            if (!isFirst) fprintf(arquivo_saida, " ");  // Adiciona espaço se não for a primeira categoria
+            fprintf(arquivo_saida, "float:");
+            for (int i = 0; i < floatCount; i++) {
+                fprintf(arquivo_saida, "%.2f ", floats[i]);
+            }
+            isFirst = 0;
         }
-        fprintf(arquivo_saida, "p:");
-        for (int i = 0; i < numPontos; i++) {
-            fprintf(arquivo_saida, "(%.1f,%.1f) ", pontos[i].x, pontos[i].y);
+
+        if (coordCount > 0) {
+            if (!isFirst) fprintf(arquivo_saida, " ");  // Adiciona espaço se não for a primeira categoria
+            fprintf(arquivo_saida, "p:");
+            for (int i = 0; i < coordCount; i++) {
+                fprintf(arquivo_saida, "%s ", pontos[i].strPonto);
+            }
+            isFirst = 0;
         }
-        fprintf(arquivo_saida, "\n");
+
+        fprintf(arquivo_saida, "\n");  // Coloca a quebra de linha no final da linha de dados
     }
 
     fclose(arquivo_entrada);

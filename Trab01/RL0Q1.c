@@ -1,3 +1,4 @@
+//Ana Emília Lobo, matricula 20241160001
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,32 +40,60 @@ void pontosParaString(Ponto pontos[], int quantidade, char *str, size_t str_size
     }
 }
 
-// Função para ordenar usando QuickSort
-void swap(Ponto *a, Ponto *b) {
-    Ponto temp = *a;
-    *a = *b;
-    *b = temp;
-}
-
-int partition(Ponto arr[], int low, int high) {
-    float pivot = arr[high].distanciaOrigem;
-    int i = (low - 1);
-
-    for (int j = low; j <= high - 1; j++) {
-        if (arr[j].distanciaOrigem < pivot) {
-            i++;
-            swap(&arr[i], &arr[j]);
+// Função para ordenar strings usando Bubble Sort (ordem alfabética)
+void ordenarStrings(char strings[MAX_PONTOS][50], int numStrings) {
+    for (int i = 0; i < numStrings - 1; i++) {
+        for (int j = i + 1; j < numStrings; j++) {
+            if (strcmp(strings[i], strings[j]) > 0) {
+                // Troca as strings
+                char temp[50];
+                strcpy(temp, strings[i]);
+                strcpy(strings[i], strings[j]);
+                strcpy(strings[j], temp);
+            }
         }
     }
-    swap(&arr[i + 1], &arr[high]);
-    return (i + 1);
 }
 
-void quickSort(Ponto arr[], int low, int high) {
-    if (low < high) {
-        int pi = partition(arr, low, high);
-        quickSort(arr, low, pi - 1);
-        quickSort(arr, pi + 1, high);
+// Função para ordenar inteiros usando Bubble Sort (ordem crescente)
+void ordenarInteiros(int inteiros[MAX_PONTOS], int numInteiros) {
+    for (int i = 0; i < numInteiros - 1; i++) {
+        for (int j = i + 1; j < numInteiros; j++) {
+            if (inteiros[i] > inteiros[j]) {
+                // Troca os inteiros
+                int temp = inteiros[i];
+                inteiros[i] = inteiros[j];
+                inteiros[j] = temp;
+            }
+        }
+    }
+}
+
+// Função para ordenar floats usando Bubble Sort (ordem crescente)
+void ordenarFloats(float floats[MAX_PONTOS], int numFloats) {
+    for (int i = 0; i < numFloats - 1; i++) {
+        for (int j = i + 1; j < numFloats; j++) {
+            if (floats[i] > floats[j]) {
+                // Troca os floats
+                float temp = floats[i];
+                floats[i] = floats[j];
+                floats[j] = temp;
+            }
+        }
+    }
+}
+
+// Função para ordenar pontos pela distância à origem usando Bubble Sort
+void ordenarPontos(Ponto pontos[MAX_PONTOS], int numPontos) {
+    for (int i = 0; i < numPontos - 1; i++) {
+        for (int j = i + 1; j < numPontos; j++) {
+            if (pontos[i].distanciaOrigem > pontos[j].distanciaOrigem) {
+                // Troca os pontos
+                Ponto temp = pontos[i];
+                pontos[i] = pontos[j];
+                pontos[j] = temp;
+            }
+        }
     }
 }
 
@@ -106,7 +135,7 @@ int main() {
         float atalho = calcularDistancia(pontos[0], pontos[contadorPontos - 1]);
 
         // Ordenar os pontos por distância à origem
-        quickSort(pontos, 0, contadorPontos - 1);
+        ordenarPontos(pontos, contadorPontos);
 
         // Converter os pontos em string
         pontosParaString(pontos, contadorPontos, stringCoordenadas, sizeof(stringCoordenadas));
