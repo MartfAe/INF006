@@ -22,6 +22,13 @@ int isFull(Pilha *p) {
     return p->top == MAX - 1;
 }
 
+void printStack(Pilha *p) {
+    printf("Pilha final (ordenada):\n");
+    for (int i = 0; i <= p->top; i++) {
+        printf("%s\n", p->stack[i]);
+    }
+}
+
 // Função empilhar
 void push(Pilha *p, char *nome, FILE *outFile) {
     char temp[MAX][MAX_Nome];
@@ -69,6 +76,9 @@ void processInput(const char *inputFile, const char *outputFile) {
 
     fclose(inFile);
     fclose(outFile);
+
+    // Imprimir a pilha final após o processamento
+     printStack(&pilha);
 }
 
 int main() {
