@@ -1,6 +1,7 @@
 # Bubble Sort em Pseudocódigo 
 
-''' procedimento BubbleSort(lista A de n elementos)
+''' 
+procedimento BubbleSort(lista A de n elementos)
   para i de 0 até n-2
     para j de 0 até n-i-2
       se A[j] > A[j+1] então
