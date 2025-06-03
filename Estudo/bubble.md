@@ -13,9 +13,10 @@ INÍCIO
     FIMPARA
   FIMPARA
 FIM
+```
 
 
-### Observações:
+## Observações:
 - `vetor` é o array de entrada com `n` elementos.
 - O algoritmo ordena os elementos do menor para o maior (ordem crescente).
 - O pseudocódigo segue a lógica estruturada comum usada em aulas de lógica de programação ou Portugol.
