@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 
+//Complexidade: O(N)
 
 
 void bubble(int vet[], int tam){
