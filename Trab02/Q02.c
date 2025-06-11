@@ -1,93 +1,137 @@
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#define MAX 100 // Tamanho máximo da pilha
-#define MAX_Nome 50 // Tamanho máximo do nome
+#define MAX_CARACTERES 1000
+#define MAX_NOME 30
 
+// Estrutura de nó para armazenar os nomes
+typedef struct no {
+    char nome[MAX_NOME];
+    struct no *proximo;
+} No;
+
+// Estrutura de pilha, que agora armazena o topo e o tamanho
 typedef struct {
-    char stack[MAX][MAX_Nome];
-    int top;
+    No *topo;
+    int tamanho;
 } Pilha;
 
-void init(Pilha *p) {
-    p->top = -1;
+// Função para inicializar a pilha
+void inicializarPilha(Pilha *p) {
+    p->topo = NULL;
+    p->tamanho = 0;
 }
 
-int isEmpty(Pilha *p) {
-    return p->top == -1;
-}
-
-int isFull(Pilha *p) {
-    return p->top == MAX - 1;
-}
-
-void printStack(Pilha *p) {
-    printf("Pilha final (ordenada):\n");
-    for (int i = 0; i <= p->top; i++) {
-        printf("%s\n", p->stack[i]);
+// Função para empilhar um nome na pilha
+void empilhar(Pilha *p, const char *nome) {
+    No *novoNo = malloc(sizeof(No));
+    if (novoNo) {
+        strcpy(novoNo->nome, nome);
+        novoNo->proximo = p->topo;
+        p->topo = novoNo;
+        p->tamanho++;
+    } else {
+        printf("Erro de alocação de memória!\n");
     }
 }
 
-// Função empilhar
-void push(Pilha *p, char *nome, FILE *outFile) {
-    char temp[MAX][MAX_Nome];
-    int tempCount = 0;  
+// Função para desempilhar um nome da pilha
+No* desempilhar(Pilha *p) {
+    if (p->topo != NULL) {
+        No *noRemovido = p->topo;
+        p->topo = noRemovido->proximo;
+        p->tamanho--;
+        return noRemovido;
+    }
+    return NULL; // Retorna NULL se a pilha estiver vazia
+}
 
-    while (!isEmpty(p) && strcmp(p->stack[p->top], nome) > 0) {
-        strcpy(temp[tempCount++], p->stack[p->top--]);
-        fprintf(outFile, "1x-pop\n");
+// Função para imprimir a pilha (opcional para debugging)
+void imprimirPilha(Pilha *p) {
+    No *aux = p->topo;
+    printf("\nPILHA");
+    while (aux) {
+        printf("%s\n", aux->nome);
+        aux = aux->proximo;
+    }
+}
+
+int main(void) {
+    // Abrir os arquivos de entrada e saída
+    FILE *entrada = fopen("L1Q2.in", "r");
+    FILE *saida = fopen("L1Q2.out", "w");
+
+    if (!entrada || !saida) {
+        printf("Erro ao abrir arquivos!\n");
+        return EXIT_FAILURE;
     }
 
-    if (!isFull(p)) {
-        strcpy(p->stack[++p->top], nome);
-        fprintf(outFile, "push-%s\n", nome);
-    }
+    char linha[MAX_CARACTERES];
+    const char delimitador[] = " ";
 
-    for (int i = tempCount - 1; i >= 0; i--) {
-        if (!isFull(p)) {
-            strcpy(p->stack[++p->top], temp[i]);
-            fprintf(outFile, "push-%s\n", temp[i]);
+    // Pilhas principais e auxiliares
+    Pilha pilhaPrincipal, pilhaAuxiliar;
+    inicializarPilha(&pilhaPrincipal);
+    inicializarPilha(&pilhaAuxiliar);
+
+    while (fgets(linha, sizeof(linha), entrada)) {
+        linha[strcspn(linha, "\n")] = '\0';  // Remove o '\n' da linha
+        char *nome = strtok(linha, delimitador); // Separa o primeiro nome da linha
+        char resultado[MAX_CARACTERES] = ""; // String para armazenar o resultado
+
+        // Processar cada nome da linha
+        while (nome != NULL) {
+            int countPop = 0; // Contador para registrar o número de pops
+
+            // Desempilhar elementos da pilha principal enquanto necessário para manter a ordem
+            while (pilhaPrincipal.topo != NULL && strcmp(nome, pilhaPrincipal.topo->nome) < 0) {
+                No *noDesempilhado = desempilhar(&pilhaPrincipal);
+                countPop++;
+                empilhar(&pilhaAuxiliar, noDesempilhado->nome);
+                free(noDesempilhado); // Liberar memória
+            }
+
+            // Adicionar à saída o número de pops realizados
+            if (countPop > 0) {
+                char temp[50];
+                sprintf(temp, "%dx-pop ", countPop);
+                strcat(resultado, temp);
+            }
+
+            // Empilhar o nome atual na pilha principal
+            empilhar(&pilhaPrincipal, nome);
+            char tempPush[50];
+            sprintf(tempPush, "push-%s ", pilhaPrincipal.topo->nome);
+            strcat(resultado, tempPush);
+
+            // Reempilhar da pilha auxiliar de volta para a principal
+            while (pilhaAuxiliar.topo != NULL) {
+                No *noAux = desempilhar(&pilhaAuxiliar);
+                empilhar(&pilhaPrincipal, noAux->nome);
+                sprintf(tempPush, "push-%s ", noAux->nome);
+                strcat(resultado, tempPush);
+                free(noAux); // Liberar memória
+            }
+
+            // Avançar para o próximo nome na linha
+            nome = strtok(NULL, delimitador);
+        }
+
+        // Escrever a linha no arquivo de saída
+        fputs(resultado, saida);
+        printf("%s", resultado); // Imprimir no console
+
+        // Adicionar uma nova linha no arquivo, se não for o final
+        if (!feof(entrada)) {
+            fputs("\n", saida);
+            printf("\n");
         }
     }
-}
 
-void processInput(const char *inputFile, const char *outputFile) {
-    Pilha pilha; 
-    init(&pilha);
-    
-    FILE *inFile = fopen(inputFile, "r");
-    if (!inFile) {
-        perror("Erro ao abrir arquivo de entrada");
-        exit(EXIT_FAILURE);
-    }
+    // Fechar os arquivos após a leitura
+    fclose(entrada);
+    fclose(saida);
 
-    FILE *outFile = fopen(outputFile, "w");
-    if (!outFile) {
-        perror("Erro ao abrir arquivo de saída");
-        fclose(inFile);
-        exit(EXIT_FAILURE);
-    }
-
-    char name[MAX_Nome];
-    while (fscanf(inFile, "%s", name) != EOF) {
-        push(&pilha, name, outFile);
-    }
-
-    fclose(inFile);
-    fclose(outFile);
-
-    // Imprimir a pilha final após o processamento
-     printStack(&pilha);
-}
-
-int main() {
-    const char *inputFile = "L1Q2.in";
-    const char *outputFile = "L1Q2.out";
-
-    processInput(inputFile, outputFile);
-
-    printf("Arquivo de saída gerado com sucesso!\n");
-
-    return 0;
+    return EXIT_SUCCESS;
 }

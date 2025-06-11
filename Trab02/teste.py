@@ -1,6 +1,6 @@
 import random
 
-def generate_test_file(filename, num_names=100):
+def generate_test_file(filename, num_names=10):
     """Gera um arquivo de teste com nomes reais selecionados aleatoriamente."""
     # Lista de nomes reais
     names = [
